@@ -89,7 +89,6 @@
                 </div>
             </div>
 
-            <!-- Quick actions -->
             <div class="card mt-3">
                 <div class="card-header">
                     <i class="bi bi-lightning-fill me-2"></i>Plantillas premium
@@ -315,62 +314,49 @@ document.getElementById('financeForm').addEventListener('submit', async function
 </script>
 
 <!-- Modal de Configuracion -->
-<div class="modal fade" id="configModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-gear-fill me-2"></i>Configuracion</span>
-                <button class="btn btn-sm btn-outline-secondary" onclick="cerrarConfig()"><i class="bi bi-x-lg"></i></button>
-            </div>
-            <div class="card-body">
-                <p class="text-secondary small mb-3">Tus credenciales se guardan solo durante la sesion. Si no completas, se usan las del .env del servidor.</p>
-                <form id="configForm">
-                    <div class="mb-3">
-                        <label class="form-label">Notion Token</label>
-                        <input type="text" class="form-control" id="cfg_notion_token" placeholder="ntn_...">
-                        <div class="hint-text mt-1">Crear en: https://www.notion.so/my-integrations</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Notion Page ID</label>
-                        <input type="text" class="form-control" id="cfg_page_id" placeholder="URL o ID de tu pagina">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">OpenAI / Groq API Key</label>
-                        <input type="text" class="form-control" id="cfg_openai_key" placeholder="gsk_... o sk-...">
-                        <div class="hint-text mt-1">Gratis en: https://console.groq.com/keys</div>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2">Guardar configuracion</button>
-                </form>
-            </div>
+<div id="configOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;justify-content:center;align-items:flex-start;padding-top:3rem;">
+    <div class="card" style="max-width:500px;width:90%;margin:auto;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-gear-fill me-2"></i>Configuracion</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="cerrarConfig()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="card-body">
+            <p class="text-secondary small mb-3">Tus credenciales se guardan solo durante la sesion. Si no completas, se usan las del .env del servidor.</p>
+            <form id="configForm">
+                <div class="mb-3">
+                    <label class="form-label">Notion Token</label>
+                    <input type="text" class="form-control" id="cfg_notion_token" placeholder="ntn_...">
+                    <div class="hint-text mt-1">Crear en: https://www.notion.so/my-integrations</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notion Page ID</label>
+                    <input type="text" class="form-control" id="cfg_page_id" placeholder="URL o ID de tu pagina">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">OpenAI / Groq API Key</label>
+                    <input type="text" class="form-control" id="cfg_openai_key" placeholder="gsk_... o sk-...">
+                    <div class="hint-text mt-1">Gratis en: https://console.groq.com/keys</div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2">Guardar configuracion</button>
+            </form>
         </div>
     </div>
 </div>
 
-<style>
-.modal-dialog { max-width: 500px; margin: 2rem auto; }
-.modal-dialog .card { margin: 0; }
-</style>
-
 <script>
 function mostrarConfig() {
-    const m = document.getElementById('configModal');
-    m.style.display = 'block';
-    m.style.position = 'fixed';
-    m.style.top = '0'; m.style.left = '0'; m.style.width = '100%'; m.style.height = '100%';
-    m.style.backgroundColor = 'rgba(0,0,0,0.6)';
-    m.style.zIndex = '9999';
-    m.querySelector('.modal-dialog').style.marginTop = '3rem';
+    document.getElementById('configOverlay').style.display = 'flex';
 }
 
 function cerrarConfig() {
-    document.getElementById('configModal').style.display = 'none';
+    document.getElementById('configOverlay').style.display = 'none';
 }
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') cerrarConfig();
 });
 
-document.getElementById('configModal').addEventListener('click', function(e) {
+document.getElementById('configOverlay').addEventListener('click', function(e) {
     if (e.target === this) cerrarConfig();
 });
 
