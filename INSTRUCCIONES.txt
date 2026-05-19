@@ -1,0 +1,46 @@
+╔══════════════════════════════════════╗
+║   NOTION ENGINE - INSTRUCCIONES      ║
+║   Generador de plantillas con IA     ║
+╚══════════════════════════════════════╝
+
+PASO 1 - INSTALAR
+   Hace doble clic en:  setup.bat
+   Espera a que termine (1-2 minutos).
+   Te va a pedir que completes el .env.
+
+PASO 2 - CREAR CUENTAS (solo la primera vez)
+
+   A) Notion Token:
+      - Anda a https://www.notion.so/my-integrations
+      - Crea una "Internal Integration"
+      - Copia el token (empieza con ntn_...)
+      - Pegalo en .env en NOTION_TOKEN
+
+   B) Groq API Key (GRATIS):
+      - Anda a https://console.groq.com/keys
+      - Crea una API Key
+      - Copiala (empieza con gsk_...)
+      - Pegala en .env en OPENAI_API_KEY
+
+   C) ID de pagina:
+      - Abri tu pagina de Notion
+      - Copia el ID de la URL
+        (los 32 caracteres al final)
+      - Pegalo en .env en NOTION_PAGE_ID
+
+   D) Comparti la pagina con tu integracion:
+      - En Notion, hace clic en "..." arriba a la derecha
+      - Conexiones -> Agrega tu integracion
+
+PASO 3 - INICIAR
+   Hace doble clic en:  INICIAR.bat
+   Se abre una ventana negra. NO LA CIERRES.
+   Abri tu navegador en:  http://127.0.0.1:8000
+
+PASO 4 - USAR
+   - Escribe que quieres crear
+   - Opcional: pega la URL de tu pagina de Notion
+   - Click en "Generar y desplegar"
+   - Listo, la plantilla aparece en Notion
+
+TIP: Si quieres CTR+C para cerrar el servidor.

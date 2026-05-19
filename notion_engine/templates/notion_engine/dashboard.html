@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion Engine</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+        .app-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-bottom: 1px solid #2a2a4a; padding: 1rem 0; }
+        .app-header h1 { font-weight: 700; background: linear-gradient(90deg, #6c63ff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.5rem; }
+        .card { background: #12121a; border: 1px solid #2a2a3a; border-radius: 12px; }
+        .card-header { background: #1a1a2e; border-bottom: 1px solid #2a2a3a; border-radius: 12px 12px 0 0 !important; }
+        .form-control, .form-select { background: #0d0d15; border: 1px solid #2a2a3a; color: #e0e0e0; }
+        .form-control:focus, .form-select:focus { background: #0d0d15; border-color: #6c63ff; box-shadow: 0 0 0 0.25rem rgba(108, 99, 255, 0.25); color: #e0e0e0; }
+        textarea.form-control { font-size: 0.9rem; }
+        .btn-primary { background: linear-gradient(135deg, #6c63ff, #8b5cf6); border: none; }
+        .btn-primary:hover { background: linear-gradient(135deg, #5b52e0, #7c4ee0); }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); border: none; }
+        .result-card { border-left: 4px solid #10b981; }
+        .error-card { border-left: 4px solid #ef4444; }
+        .badge-db { background: #1e3a5f; color: #93c5fd; }
+        .badge-block { background: #3b1f4e; color: #d8b4fe; }
+        .spinner { width: 1.2rem; height: 1.2rem; border: 2px solid #6c63ff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .hint-text { font-size: 0.8rem; color: #888; }
+        .navbar-brand i { font-size: 1.5rem; margin-right: 0.5rem; }
+        .result-item { padding: 0.75rem; border-bottom: 1px solid #1a1a2a; }
+        .result-item:last-child { border-bottom: none; }
+        .quick-btn { font-size: 0.8rem; padding: 0.25rem 0.5rem; }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-grid-3x3-gap-fill" style="color: #6c63ff; font-size: 1.8rem;"></i>
+                <div>
+                    <h1 class="mb-0">Notion Engine</h1>
+                    <small class="text-secondary">Generador de plantillas con IA</small>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="status-dot bg-success" id="statusDot"></span>
+                <small class="text-secondary ms-1 d-none d-md-inline" id="statusText">Servidor activo</small>
+                <button class="btn btn-sm btn-outline-secondary" onclick="mostrarConfig()" title="Configuracion">
+                    <i class="bi bi-gear-fill"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-pencil-square me-2"></i>Nueva plantilla</span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary quick-btn me-1" onclick="cargarPrompt('crm')">CRM</button>
+                        <button class="btn btn-sm btn-outline-secondary quick-btn me-1" onclick="cargarPrompt('proyectos')">Proyectos</button>
+                        <button class="btn btn-sm btn-outline-secondary quick-btn me-1" onclick="cargarPrompt('habitos')">Hábitos</button>
+                        <button class="btn btn-sm btn-outline-secondary quick-btn" onclick="cargarPrompt('finanzas')">Finanzas</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form id="generateForm">
+                        <div class="mb-3">
+                            <label class="form-label">¿Qué querés crear?</label>
+                            <textarea class="form-control" id="prompt" rows="6" placeholder="Ej: Crea un sistema de gestión de proyectos con una base de datos de tareas, otra de equipo, y bloques de dashboard..." required></textarea>
+                            <div class="hint-text mt-1">Describí bases de datos, propiedades, tipos y relaciones.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Página de Notion (opcional)</label>
+                            <input type="text" class="form-control" id="pageId" placeholder="https://www.notion.so/TuPagina-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                            <div class="hint-text mt-1">Si no ponés nada, se usa la página del .env</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2" id="submitBtn">
+                            <i class="bi bi-magic me-2"></i>Generar y desplegar
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="bi bi-lightning-fill me-2"></i>Plantillas premium
+                </div>
+                <div class="card-body d-flex flex-column gap-3">
+                    <form action="/api/v1/notion/deploy-crm/" method="post" id="crmForm">
+                        <p class="text-secondary small mb-2">CRM de Ventas completo (Empresas, Contactos, Pipeline, Interacciones).</p>
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" name="page_id" placeholder="ID de página (opcional)">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 py-2">
+                            <i class="bi bi-building me-2"></i>Desplegar CRM completo
+                        </button>
+                    </form>
+                    <hr class="my-1">
+                    <form action="/api/v1/notion/deploy-finance/" method="post" id="financeForm">
+                        <p class="text-secondary small mb-2">Finanzas Personales (Ingresos, Gastos, Metas con fórmula de progreso automático).</p>
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" name="page_id" placeholder="ID de página (opcional)">
+                        </div>
+                        <button type="submit" class="btn btn-info w-100 py-2">
+                            <i class="bi bi-wallet2 me-2"></i>Desplegar Finanzas
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card" id="resultCard" style="display: none;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-check2-circle me-2"></i>Resultado</span>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="cerrarResultado()"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div class="card-body" id="resultContent"></div>
+            </div>
+
+            <div class="card" id="loadingCard" style="display: none;">
+                <div class="card-body text-center py-5">
+                    <div class="spinner mb-3"></div>
+                    <p class="mb-0 text-secondary">Generando plantilla con IA local...</p>
+                    <small class="text-secondary">Esto puede tomar unos segundos</small>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-info-circle me-2"></i>Tips
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small text-secondary mb-0">
+                        <li class="mb-2"><i class="bi bi-1-circle me-2"></i>Escribí qué necesitás en lenguaje natural</li>
+                        <li class="mb-2"><i class="bi bi-2-circle me-2"></i>Especificá bases de datos, columnas y tipos</li>
+                        <li class="mb-2"><i class="bi bi-3-circle me-2"></i>Usá los botones rápidos para ejemplos</li>
+                        <li class="mb-2"><i class="bi bi-4-circle me-2"></i>El modelo local funciona mejor con GPT-4 para estructuras complejas</li>
+                        <li><i class="bi bi-5-circle me-2"></i>Después de crear, podés cambiar vistas en Notion (Kanban, Gallery, etc.)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const quickPrompts = {
+    crm: `Crea un CRM de ventas con:
+- Empresas: Nombre (title), Industria (select: Tecnologia, Finanzas, Salud), Sitio Web (url), Tamano (select: 1-10, 11-50, 51-200)
+- Contactos: Nombre Completo (title), Cargo (rich_text), Email (email), Telefono (phone)
+- Pipeline de Ventas: Nombre Oportunidad (title), Etapa (status: Calificado, Propuesta, Negociacion, Cerrado), Valor (number), Fecha Cierre (date)
+- Interacciones: Asunto (title), Tipo (select: Reunion, Llamada, Email), Fecha (date), Notas (rich_text)
+
+Agrega bloques de bienvenida y dashboard.`,
+    proyectos: `Crea un sistema de gestion de proyectos con:
+- Proyectos: Nombre (title), Estado (status: Activo, En Pausa, Completado), Prioridad (select: Alta, Media, Baja), Fecha Inicio (date), Fecha Fin (date)
+- Tareas: Titulo (title), Asignado a (rich_text), Estado (select: Pendiente, En Progreso, Hecho), Fecha Limite (date)
+Agrega un dashboard con los proyectos activos.`,
+    habitos: `Crea un sistema de seguimiento de habitos diarios con:
+- Habitos: Nombre (title), Categoria (select: Salud, Trabajo, Personal), Frecuencia (select: Diario, Semanal), Racha (number)
+- Registros Diarios: Fecha (date), Estado (select: Hecho, Pendiente, Salteado)
+Agrega bloques con tu progreso y metas.`,
+    finanzas: `Crea un sistema de finanzas personales con:
+- Ingresos: Nombre (title), Monto (number), Categoria (select: Sueldo, Freelance, Inversiones), Fecha (date)
+- Gastos: Nombre (title), Monto (number), Categoria (select: Comida, Transporte, Ocio), Pagado (checkbox)
+- Metas: Nombre (title), Monto Objetivo (number), Progreso (number), Fecha Limite (date)
+Agrega bloques de bienvenida tipo dashboard financiero con balance, gastos del mes y progreso de ahorro.`
+};
+
+function cargarPrompt(tipo) {
+    document.getElementById('prompt').value = quickPrompts[tipo];
+    document.getElementById('prompt').focus();
+}
+
+function extraerPageId(url) {
+    if (!url) return '';
+    const match = url.match(/([a-f0-9]{32})/i);
+    return match ? match[1] : url;
+}
+
+function cerrarResultado() {
+    document.getElementById('resultCard').style.display = 'none';
+}
+
+document.getElementById('generateForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingCard = document.getElementById('loadingCard');
+    const resultCard = document.getElementById('resultCard');
+    const resultContent = document.getElementById('resultContent');
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Generando...';
+    loadingCard.style.display = 'block';
+    resultCard.style.display = 'none';
+
+    const prompt = document.getElementById('prompt').value;
+    const pageId = extraerPageId(document.getElementById('pageId').value);
+
+    const body = { prompt };
+    if (pageId) body.page_id = pageId;
+
+    try {
+        const res = await fetch('/api/v1/notion/generate/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        loadingCard.style.display = 'none';
+        resultCard.style.display = 'block';
+
+        if (data.status === 'success') {
+            let html = `<div class="result-card" style="border-left-color: #10b981; padding-left: 1rem;">
+                <h5 class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>${data.template_name}</h5>`;
+            if (data.databases_created && data.databases_created.length) {
+                html += '<h6 class="text-secondary mb-2"><i class="bi bi-database me-1"></i>Bases de datos creadas:</h6>';
+                data.databases_created.forEach(db => {
+                    html += `<div class="result-item d-flex justify-content-between align-items-center">
+                        <span><span class="badge badge-db me-2">DB</span>${db.name}</span>
+                        <a href="${db.url}" target="_blank" class="btn btn-sm btn-outline-secondary">Abrir</a>
+                    </div>`;
+                });
+            }
+            if (data.blocks_inserted > 0) {
+                html += `<div class="result-item"><span class="badge badge-block me-2">📝</span>${data.blocks_inserted} bloques insertados</div>`;
+            }
+            html += '</div>';
+            resultContent.innerHTML = html;
+        } else {
+            let html = `<div class="error-card" style="border-left-color: #ef4444; padding-left: 1rem;">
+                <h5 class="mb-2 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error</h5>
+                <p class="mb-0 text-secondary">${data.message || 'Error desconocido'}</p>
+            </div>`;
+            resultContent.innerHTML = html;
+        }
+    } catch (err) {
+        loadingCard.style.display = 'none';
+        resultCard.style.display = 'block';
+        resultContent.innerHTML = `<div class="error-card" style="border-left-color: #ef4444; padding-left: 1rem;">
+            <h5 class="mb-2 text-danger"><i class="bi bi-wifi-off me-2"></i>Error de conexión</h5>
+            <p class="mb-0 text-secondary">${err.message}</p>
+        </div>`;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-magic me-2"></i>Generar y desplegar';
+    }
+});
+
+document.getElementById('crmForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const btn = form.querySelector('button');
+    const pageInput = form.querySelector('input[name="page_id"]');
+    const pageId = extraerPageId(pageInput.value);
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Desplegando...';
+
+    try {
+        const res = await fetch('/api/v1/notion/deploy-crm/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page_id: pageId || undefined })
+        });
+        const data = await res.json();
+        alert(data.message || data.error || 'CRM desplegado');
+        location.reload();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-building me-2"></i>Desplegar CRM completo';
+    }
+});
+
+document.getElementById('financeForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const btn = form.querySelector('button');
+    const pageInput = form.querySelector('input[name="page_id"]');
+    const pageId = extraerPageId(pageInput.value);
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Desplegando...';
+
+    try {
+        const res = await fetch('/api/v1/notion/deploy-finance/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page_id: pageId || undefined })
+        });
+        const data = await res.json();
+        alert(data.message || data.error || 'Finanzas desplegado');
+        location.reload();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-wallet2 me-2"></i>Desplegar Finanzas';
+    }
+});
+</script>
+
+<!-- Modal de Configuracion -->
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-gear-fill me-2"></i>Configuracion</span>
+                <button class="btn btn-sm btn-outline-secondary" onclick="cerrarConfig()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="card-body">
+                <p class="text-secondary small mb-3">Tus credenciales se guardan solo durante la sesion. Si no completas, se usan las del .env del servidor.</p>
+                <form id="configForm">
+                    <div class="mb-3">
+                        <label class="form-label">Notion Token</label>
+                        <input type="text" class="form-control" id="cfg_notion_token" placeholder="ntn_...">
+                        <div class="hint-text mt-1">Crear en: https://www.notion.so/my-integrations</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notion Page ID</label>
+                        <input type="text" class="form-control" id="cfg_page_id" placeholder="URL o ID de tu pagina">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">OpenAI / Groq API Key</label>
+                        <input type="text" class="form-control" id="cfg_openai_key" placeholder="gsk_... o sk-...">
+                        <div class="hint-text mt-1">Gratis en: https://console.groq.com/keys</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2">Guardar configuracion</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-dialog { max-width: 500px; margin: 2rem auto; }
+.modal-dialog .card { margin: 0; }
+</style>
+
+<script>
+function mostrarConfig() {
+    const m = document.getElementById('configModal');
+    m.style.display = 'block';
+    m.style.position = 'fixed';
+    m.style.top = '0'; m.style.left = '0'; m.style.width = '100%'; m.style.height = '100%';
+    m.style.backgroundColor = 'rgba(0,0,0,0.6)';
+    m.style.zIndex = '9999';
+    m.querySelector('.modal-dialog').style.marginTop = '3rem';
+}
+
+function cerrarConfig() {
+    document.getElementById('configModal').style.display = 'none';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') cerrarConfig();
+});
+
+document.getElementById('configModal').addEventListener('click', function(e) {
+    if (e.target === this) cerrarConfig();
+});
+
+document.getElementById('configForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+    try {
+        const res = await fetch('/api/v1/notion/save-settings/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                notion_token: document.getElementById('cfg_notion_token').value,
+                page_id: document.getElementById('cfg_page_id').value,
+                openai_key: document.getElementById('cfg_openai_key').value,
+            })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            alert('Configuracion guardada correctamente');
+            cerrarConfig();
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Guardar configuracion';
+    }
+});
+</script>
+
+</body>
+</html>
